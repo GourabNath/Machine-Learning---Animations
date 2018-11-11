@@ -2,13 +2,24 @@
 #CLASS IMBALANCED TECHNIQUES - ANIMATIONS
 #===========================================================================================
 
-
+#==========================================================================================
 #Data
 #===========================================================================================
 
 data2 = read.csv("C:\\Users\\Gourab\\Documents\\Imbalanced Technique Demo.csv")
 data2 = data2[-1]
 View(data2)
+
+
+#NOTE:
+#For every functions it was assumes that the data is of the followinf form
+#
+#|   X1    |    X2   |    Y    |
+#
+#Where X1 and x2 are two numerical variables and Y is a binary variable with 0 and 1 in the
+#integer format.
+#The entire purpose of this project is to visualize who the class imbalanced correction technique
+#may work. That is why we have restricted ourself to such simple datasets.
 
 
 
@@ -36,15 +47,27 @@ k_NN <- function(data, x, class, k)
     distance[i] = euclid_dist(data[i,],x)
   }
   
+  #Identifying the nearest k observatioins
   dist_obs = data.frame('Obs'=1:nrow(data), 'Dist'=distance)
   dist_obs_ord = dist_obs[order(dist_obs$Dist), ]
-  KNN = data[dist_obs_ord$Obs[2:(k+1)], ]
+  
+  KNN = data[dist_obs_ord$Obs[2:(k+1)], ]  #k-nearest neighbours
+  
   return(list(KNN=KNN, Obs=dist_obs_ord$Obs[2:(k+1)], 
               Dist=sqrt(dist_obs_ord$Dist[2:(k+1)])))
 }
 
 
-#Plotting the NNs:
+#The above function returns a list that contains the following:
+#
+#1. The k-nearest neighbour observations (as data frame)
+#2. The index of the nearest observation (a vector)
+#3. The distances of the nearest observatioins (a vector)
+
+
+
+#Plotting the Nearest Neighbours:
+#-------------------------------------------------------------------------------------------
 
 ##Plot the original data
 plot(data2$X1, data2$X2, pch=20, col = ifelse(data2$Y==1, "black", "magenta")) 
@@ -60,23 +83,32 @@ points(knn$KNN$X1, knn$KNN$X2, pch=1, cex=3, col='blue')
 
 
 
-#Plotting the NNs for all the observations
+#Plotting the KNNs for all the observations in a data frame.
+#------------------------------------------------------------------------------------------
 
 Plot_KNN<- function(data, K, obs=1:nrow(data))
 {
   for(i in obs)
   {
+    #The ith observation
     x = data[i, 1:2]
+    
+    #Get the k-nearest observations
     knn = k_NN(data[,1:2], x, data2$Y, k=K)$KNN
     
+    
+    #Plot the entire data
     plot(data[,1], data[,2], pch=20, col = ifelse(data[,3] ==1, "black", "magenta"),
          main = paste("Observation No.",i),
          xlab = 'Variable 1', ylab = 'Variable 2')
     
+    
+    #Circle the ith observation
     points(data[i, 1], data[i, 2], pch=1, cex=3, col='red')
     
     Sys.sleep(1.5)
     
+    #Plot the nearest neighbours
     points(knn[,1], knn[,2], pch=1, cex=3, col='blue')
     
     Sys.sleep(0.75)
@@ -85,6 +117,7 @@ Plot_KNN<- function(data, K, obs=1:nrow(data))
 }
 
 
+#DEMO:
 Plot_KNN(data2, K=3, obs=which(data2$Y == 1))
 
 
@@ -94,28 +127,41 @@ Plot_KNN(data2, K=3, obs=which(data2$Y == 1))
 # TOMEK - DEMONSTRATION
 #============================================================================================
 
-Plot_Tomek <- function(data, K, obs=1:nrow(data))
+#This function will help us to visualize how Tomek Links are identified.
+#The function has the following arguments:
+#
+# data = A data frame that contains variables of the form X1 | X2 | Y
+# obs  = A numeric vector containing the observation index to be considered
+
+
+
+Plot_Tomek <- function(data, obs=1:nrow(data))
 {
   
+  #A data frame where we will store the Tomek Links
   tomek = data.frame(X1=NA, X2=NA, Y=NA)
+  
   for(i in obs)
   {
     x = data[i, 1:2]
-    knn = k_NN(data[,1:2], x, data2$Y, k=K)
+    knn = k_NN(data[,1:2], x, data2$Y, k=1)
     
-    #Checking for Tomek Links
+    #Checking for Tomek Links (if the nearest obs is from the other class)
     obs = knn$Obs
     if(data[i,3] != data[obs,3])
       tomek = rbind(tomek,data[c(i,obs), ])
     
+    #Plot the entire data
     plot(data[,1], data[,2], pch=20, cex = 1, 
          col = ifelse(data[,3] ==1, "black", "magenta"),
          main = paste("No. of Tomek Links Found:", (nrow(tomek)-1)/2),
          xlab = 'Variable1', ylab = 'Variable2') 
     
+    #Plot the tomek links (so that they stays there in every graph)
     points(tomek[, 1], tomek[, 2], pch=1, cex=3, 
            col=ifelse(tomek[,3] ==1, "blue", "red"))
     
+    #Circle the ith obs and its k nearest neighbours
     points(data[i, 1], data[i, 2], pch=1, cex=3, col='red')
     points(knn$KNN[,1], knn$KNN[,2], pch=1, cex=3, col='blue')
     
@@ -124,11 +170,14 @@ Plot_Tomek <- function(data, K, obs=1:nrow(data))
   }
   
   
+  #Removing the first obs (containing NA) and subsetting such that we have the obs with 
+  #majorit class from the tomek links
   tomek = tomek[-1,]
   tomek_0 = tomek[tomek$Y==0, ]
   
 
-  text(6.0,3.25, 'Now Remove the Majority Classes \namong the Tomek Links', col='red')
+  #A Text with explanation
+  text(6.0,3.25, 'Now Remove the Majority Classes \namong the Tomek Links', col='maroon')
   points(tomek_0[, 1], tomek_0[, 2], pch=4, cex=2, col='red')
   
   #Sys.sleep(3)
@@ -141,26 +190,39 @@ Plot_Tomek <- function(data, K, obs=1:nrow(data))
   
   #points(tomek[tomek$Y==1, 1], tomek[tomek$Y==1, 2], pch=1, cex=3, col='blue')
   
+  #Return the tomek links
   return(tomek)
   
 }
 
 
 
-
-tmk = Plot_Tomek(data2, K=1, obs=which(data2$Y == 1))
+#DEMO:
+tmk = Plot_Tomek(data2, obs=which(data2$Y == 1))
 
 
 
 
 #============================================================================================
-#ENN - Demonstration
+#ENN (Edited Nearest Neighbour) - Demonstration
 #============================================================================================
+
+#This function will help us to visualize how ENN is used for class imbalanced problems.
+#The function has the following arguments:
+#
+# data = A data frame that contains variables of the form X1 | X2 | Y
+# K    = The value of k in kNN
+# obs  = A numeric vector containing the observation index to be considered (by default it is only the obs from the majority class)
+
+
 
 Plot_ENN <- function(data, K, obs=which(data$Y == 0))
 {
   
+  #The obs that are needed to be deleted by this process will be stores in this data frame
   enn_del = data.frame(X1=NA, X2=NA)
+  
+  #This vector will contain the index of the deleted observations
   del_obsNo = c()
   
   for(i in obs)
@@ -168,7 +230,7 @@ Plot_ENN <- function(data, K, obs=which(data$Y == 0))
     x = data[i, 1:2]
     knn = k_NN(data[,1:2], x, data2$Y, k=K)
     
-    #Checking ENN
+    #Checking ENN (if an obs from majority class gets misclassified by its kNNs)
     pred_Y = ifelse(sum(data$Y[knn$Obs]) >= length(data$Y[knn$Obs])/2, 1, 0)
     
     #If the obs belongs to the minority class & gets misclassified
@@ -183,45 +245,48 @@ Plot_ENN <- function(data, K, obs=which(data$Y == 0))
   
     }
     
+    #plot the entire data
     plot(data[,1], data[,2], pch=20, cex = 1, 
          col = ifelse(data[,3] ==1, "black", "magenta"),
          main = paste('Observation No.',i),
          xlab = 'Variable1', ylab = 'Variable2') 
     
-    #Plotting the deleted observations
+    #Plotting the observations to be deleted
     points(enn_del[,1], enn_del[,2], pch=1, cex=3, col='red')
     points(enn_del[,1], enn_del[,2], pch=4, cex=3, col='red')
+    
+    #Plotting the observation nos. of the observations to be deleted
     text(enn_del[,1]+0.1, enn_del[,2], del_obsNo, cex=0.75)
     
-   
+    #Circling the ith observations and its nearest neighbours
     points(data[i, 1], data[i, 2], pch=1, cex=3, col='red')
-    
     Sys.sleep(0.6)
     points(knn$KNN[,1], knn$KNN[,2], pch=1, cex=3, col='blue')
-    
     Sys.sleep(0.6)
     
   }
   
   
+  #Finally plotting the entire data once again
   plot(data[,1], data[,2], pch=20, cex = 1, 
        col = ifelse(data[,3] ==1, "black", "magenta"),
        main = paste('Observation No.',i),
        xlab = 'Variable1', ylab = 'Variable2') 
   
-  #Plotting the deleted observations
+  #And Plotting the observations to be deleted
   points(enn_del[,1], enn_del[,2], pch=1, cex=3, col='red')
   points(enn_del[,1], enn_del[,2], pch=4, cex=3, col='red')
   text(enn_del[,1]+0.1, enn_del[,2], del_obsNo, cex=0.75)
   
   
-  
+  #Returns a data frame after deleting the observations by this methods
   return(data[-del_obsNo, ])
   
 }
 
 
 
+#DEMO:
 enn = Plot_ENN(data2, K=3, obs=which(data$Y == 0))
 
 
@@ -232,12 +297,22 @@ i = 7 #52 51 52 54 55 56 60 61 62 63
 K=1
 
 
-#============================================================================================
+#==================================================================================================================================
 # SMOTE DEMONSTRATION
-#============================================================================================
+#==================================================================================================================================
+
+#This function will help us to visualize how SMOTE synthetically demonstrated minority class observations
+#The function has the following arguments:
+#
+# data = A data frame that contains variables of the form X1 | X2 | Y
+# K    = The value of k in kNN
+# obs  = A numeric vector containing the observation index to be considered (by default it is only the obs from the minority class)
+# ntimes = No. of times you want to repeat the process (by default it is 1)
+
 
 Plot_SMOTE <- function(data, K, obs=which(data$Y == 1), ntimes=1)
 {
+  #A data frame that will store the synthetic observations
   syn_obs <- data.frame(X1=NA, X2=NA)
   
   #Subset with only the minority class 
@@ -261,10 +336,15 @@ Plot_SMOTE <- function(data, K, obs=which(data$Y == 1), ntimes=1)
       
       for(l in 1:nrow(k$KNN))
       {
-        #Syn_obs
+        #d  = distance between obs i and its NN
+        #d1 = distance from obs i where the new observation is to be synthesized
+        #d1 = d * r, where r is a number between 0 and 1
         d = k$Dist
         d1 = runif(1)*d
         d2 = d - d1
+        
+        #Here we have section formula to get the coordinate of the new point
+        #between the two points - the obs and its NN in the ratio d1:d2
         p=section_form(x,k$KNN[l,],d1,d2)
         
         #Adding it to the synthetic obs data frame
@@ -306,8 +386,9 @@ Plot_SMOTE <- function(data, K, obs=which(data$Y == 1), ntimes=1)
        xlab = 'Variable1', ylab = 'Variable2') 
   
   #Plotting the synthetic obs
-  points(syn_obs[-nrow(syn_obs),1],syn_obs[-nrow(syn_obs),2],cex=2,pch=13,col='black')
+  points(syn_obs[-nrow(syn_obs),1],syn_obs[-nrow(syn_obs),2],cex=2,pch=13,col='orange')
   
+  #Return the synthetic observations
   syn_obs=syn_obs[complete.cases(syn_obs),]
   return(syn_obs)
   
@@ -315,4 +396,5 @@ Plot_SMOTE <- function(data, K, obs=which(data$Y == 1), ntimes=1)
 }
 
 
+#DEMO:
 Plot_SMOTE(data2,K=3,ntimes = 1)
