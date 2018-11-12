@@ -22,7 +22,100 @@ View(data2)
 #may work. That is why we have restricted ourself to such simple datasets.
 
 
+#===========================================================================================
+#Random Under-Sampling
+#===========================================================================================
 
+Plot_under <- function(data, p=0.5)
+{
+  data0 = data[data$Y == 0,]
+  sampUnder = sample(rownames(data0),p*nrow(data0))
+  
+  del.data = data[as.numeric(sampUnder), 1:2]
+  
+  #Visualize the Deleted Observations
+  for(i in 1:nrow(del.data))
+  {
+    plot(data$X1, data$X2, pch=20, col=ifelse(data2$Y==1, 'black','magenta'),
+         xlab = 'Variable 1', ylab = 'Variable 2',
+         main = 'Random Undersampling')
+    
+    points(del.data$X1[1:i], del.data$X2[1:i], pch=1, cex=2, col='red')
+    points(del.data$X1[1:i], del.data$X2[1:i], pch=4, cex=2, col='red')
+    Sys.sleep(0.35)
+  }
+  
+  Sys.sleep(1)
+  #Visualize the New Data
+  plot(data[-as.numeric(sampUnder),1], data[-as.numeric(sampUnder),2], pch=20, 
+       col=ifelse(data[-as.numeric(sampUnder),3]==1, 'black','magenta'),
+       xlab = 'Variable 1', ylab = 'Variable 2',
+       main = 'Data after Random Undersampling')
+  
+}
+
+
+Plot_under(data2)
+
+
+
+#============================================================================================
+#Random Over-Samling:
+#============================================================================================
+
+
+Plot_Over <- function(data, p=2)
+{
+  data1 = data[data$Y == 1,]
+  sampOver = sample(rownames(data1),p*nrow(data1),replace = T)
+  sampOver = as.numeric(sampOver)
+  
+  added.data = data[sampOver, 1:2]
+  
+  dup = c()
+  for(i in 1:nrow(added.data))
+  {
+    dup[i] = 0
+    for(j in 1:i)
+    {
+      if(sum(added.data[i, ] == added.data[j, ])==2)
+      {
+        dup[i] = dup[i]+1
+      }
+      
+    }
+  }
+  
+  added.data$Duplicate = dup
+  #added.data
+  
+  
+  for(i in 1:nrow(added.data))
+  {
+    
+    if(added.data$Duplicate[i] > 1)
+    {
+      #added.data[1:(i-1), ]
+      added.data[1:(i-1), ][(added.data[1:(i-1), ]$X1==added.data$X1[i])&(added.data[1:(i-1), ]$X2==added.data$X2[i]), 3] = NA
+    }
+    
+    plot(data$X1, data$X2, pch=20, col=ifelse(data$Y==1, 'black','magenta'),
+         xlab = 'Variable 1', ylab = 'Variable 2',
+         main = 'Random Over-sampling')
+    
+    points(added.data$X1[1:i], added.data$X2[1:i], pch=1, cex=3, col='red')
+    text(added.data$X1[1:i], added.data$X2[1:i]-0.1, added.data$Duplicate[1:i] ,cex=0.8, col='black')
+    Sys.sleep(0.35)
+  }
+  
+}
+
+
+Plot_Over(data2,p=3)
+
+
+
+#============================================================================================
 #Algorithm to identify the Nearest Neighbours:
 #============================================================================================
 
@@ -260,7 +353,7 @@ Plot_ENN <- function(data, K, obs=which(data$Y == 0))
     
     #Circling the ith observations and its nearest neighbours
     points(data[i, 1], data[i, 2], pch=1, cex=3, col='red')
-    Sys.sleep(0.6)
+    #Sys.sleep(0.6)
     points(knn$KNN[,1], knn$KNN[,2], pch=1, cex=3, col='blue')
     Sys.sleep(0.6)
     
@@ -351,7 +444,7 @@ Plot_SMOTE <- function(data, K, obs=which(data$Y == 1), ntimes=1)
         syn_obs = rbind(syn_obs,p)
         
         #Plot the entire data
-        plot(data[,1], data[,2], pch=20, cex = 1.25, 
+        plot(data[,1], data[,2], pch=20, cex = 1, 
              col = ifelse(data[,3] ==1, "black", "magenta"),
              main = paste('Observation No.',i ,", Neighbour", l),
              xlab = 'Variable1', ylab = 'Variable2') 
@@ -380,7 +473,7 @@ Plot_SMOTE <- function(data, K, obs=which(data$Y == 1), ntimes=1)
     
   }
   #Plot the entire data
-  plot(data[,1], data[,2], pch=20, cex = 1.25, 
+  plot(data[,1], data[,2], pch=20, cex = 1, 
        col = ifelse(data[,3] ==1, "black", "magenta"),
        main = paste('Actual Observations + Synthetic Observations'),
        xlab = 'Variable1', ylab = 'Variable2') 
@@ -397,4 +490,4 @@ Plot_SMOTE <- function(data, K, obs=which(data$Y == 1), ntimes=1)
 
 
 #DEMO:
-Plot_SMOTE(data2,K=3,ntimes = 1)
+Plot_SMOTE(data2,K=2,ntimes = 1)
